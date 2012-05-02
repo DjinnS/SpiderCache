@@ -2,7 +2,7 @@
 #
 # spidercache.pl
 #
-# TBD
+# SpiderCache crawls a URI and determines the HIT ratio (based on value in X-Cache header)
 #
 # http://github.com/djinns/SpiderCache
 #
