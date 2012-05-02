@@ -39,12 +39,17 @@ my $o_matchurl;
 #------------------------------------------------
 # parameters
 my $version="0.1";
-my $useragent="SpiderCache - version ". $version ." - https://github.com/djinns/SpiderCache";
+my $userAgent="SpiderCache - version ". $version ." - https://github.com/djinns/SpiderCache";
 my $timeout=60;
 my $validcode="(200|304)";
+my $cacheHeader="X-Cache";
+my $cachePattern="HIT";
+
+#------------------------------------------------
+# vars
 my $hit=0;
 my $miss=0;
-my $total=0;
+my $total=1; # because there is always at least 1 request !
 
 #------------------------------------------------
 # functions
@@ -64,14 +69,12 @@ sub check_options {
 check_options();
 
 my $ua = new LWP::UserAgent;
-
 my $uri = URI->new($o_url);
 
 print "\nSpider Cache - version $version\n\n";
-
 print "\tMiss URL:\n\n";
 
-$ua->agent($useragent);
+$ua->agent($userAgent);
 $ua->timeout($timeout);
  
 my $request = HTTP::Request->new('GET');
@@ -80,13 +83,11 @@ $request->url($o_url);
  
 my $response = $ua->request($request);
 
-$total++; 
- 
+# Page exits or response valid
 if($response->code =~ /$validcode/) {
 
-	if(defined($response->header('X-Cache'))) { 
-
-		if($response->header('X-Cache') =~ /HIT/) {
+	if(defined($response->header($cacheHeader))) { 
+		if($response->header($cacheHeader) =~ /$cachePattern/) {
 			$hit++;
 		}
 	} else {
@@ -98,6 +99,7 @@ if($response->code =~ /$validcode/) {
  
 	my $parsed_html = HTML::Parse::parse_html($body);
 
+	# inspect HTML head and body parts: img, script, style tags
 	for (@{ $parsed_html->extract_links(qw(head body img script style)) }) {
  
 	    my ($link) = @$_;
@@ -106,8 +108,8 @@ if($response->code =~ /$validcode/) {
 
 		my $ua2 = new LWP::UserAgent;
 
-		$ua2->agent('Mozilla/5.5 (compatible; MSIE 5.5; Windows NT 5.1)');
-		$ua2->timeout(15);
+		$ua2->agent($userAgent);
+		$ua2->timeout($timeout);
 
 		my $request2 = HTTP::Request->new('GET');
 
@@ -123,14 +125,12 @@ if($response->code =~ /$validcode/) {
 			die('link ?!');
 		}
 
-		if($debug) { print "-> url2: $url2 [$link]\n"; }
-
 		$request2->url($url2);
 	
 		my $response2 = $ua2->request($request2);
 
-		if(defined($response2->header('X-Cache'))) {
-			if($response2->header('X-Cache') =~ /HIT/) {
+		if(defined($response2->header($cacheHeader))) {
+			if($response2->header($cacheHeader) =~ /$cachePattern/) {
 				$hit++;
 			}
 		} else {
