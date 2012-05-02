@@ -1,3 +1,3 @@
-<h1>SpideCache</h1>
+<h1>SpiderCache</h1>
 
 <strong>TBD</strong>
